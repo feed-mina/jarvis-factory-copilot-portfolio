@@ -1,0 +1,43 @@
+name: jarvis-web
+services:
+  login:
+    image: quay.io/oauth2-proxy/oauth2-proxy@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
+    network_mode: host
+    restart: unless-stopped
+    env_file:
+      - /docker/jarvis-integration/.secrets/web-login.env
+    volumes:
+      - /docker/jarvis-integration/web/allowed-emails.txt:/etc/jarvis-emails.txt:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    command:
+      - --provider=google
+      - --http-address=127.0.0.1:4180
+      - --upstream=http://127.0.0.1:8011
+      - --api-route=^/api/
+      - --redirect-url=https://jarvis.example.com/oauth2/callback
+      - --authenticated-emails-file=/etc/jarvis-emails.txt
+      - --scope=openid email profile
+      - --reverse-proxy=true
+      - --pass-host-header=true
+      - --pass-user-headers=true
+      - --pass-basic-auth=false
+      - --pass-access-token=false
+      - --cookie-secure=true
+      - --cookie-samesite=lax
+      - --cookie-name=__Host-jarvis_login
+      - --cookie-expire=8h
+      # PWA startup can request the page, service worker and manifest in parallel.
+      # Keep each OAuth state in its own signed CSRF cookie and bound stale flows.
+      - --cookie-csrf-per-request=true
+      - --cookie-csrf-per-request-limit=10
+      - --skip-provider-button=true
+      - --request-logging=false
+      - --auth-logging=false
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jarvis-web.rule=Host(`jarvis.example.com`)
+      - traefik.http.routers.jarvis-web.entrypoints=websecure
+      - traefik.http.routers.jarvis-web.tls.certresolver=letsencrypt
+      - traefik.http.services.jarvis-web.loadbalancer.server.port=4180

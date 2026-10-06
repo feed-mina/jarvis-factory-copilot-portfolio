@@ -1,0 +1,24 @@
+/* questions.js — 정답이 명확한 질문 10개 (E04). 테스트(E22~E26)와 화면의 "질문 고르기"가 같은 표를 쓴다.
+ * kind: analyze = 파이프라인 실행 · exact = Tool 로 바로 조회(조회 방법 exact). 기대값은 data.js PLANTED 에서 나온다. */
+export const QUESTIONS = [
+  { id: "Q01", kind: "analyze", cycle_id: "C-20260706-0112", text: "C-20260706-0112 사이클에서 무슨 일이 있었나?",
+    expect: { run_status: "proposed", action: "STOP_LINE", origin_node: "node_3", event_ids: ["E-881"], confidence: "high" } },
+  { id: "Q02", kind: "analyze", cycle_id: "C-20260706-0118", text: "C-20260706-0118 에서 노드 속도가 왜 서로 다른가?",
+    expect: { run_status: "proposed", action: "INSPECT_NODE", origin_node: "node_4", event_ids: ["E-902"], rule_id: "LEDGER-0811-NODE-MISMATCH" } },
+  { id: "Q03", kind: "analyze", cycle_id: "C-20260706-0105", text: "C-20260706-0105 는 이상이 있나?",
+    expect: { run_status: "no_action", action: "NO_ACTION" } },
+  { id: "Q04", kind: "analyze", cycle_id: "C-20260706-0122", text: "C-20260706-0122 의 node_1 속도가 음수인데 정지인가?",
+    expect: { run_status: "needs_review", quality: "negative_or_null_speed" } },
+  { id: "Q05", kind: "analyze", cycle_id: "C-20260706-0124", text: "C-20260706-0124 는 노드가 3개뿐인데 판정할 수 있나?",
+    expect: { run_status: "needs_review", quality: "node_missing" } },
+  { id: "Q06", kind: "analyze", cycle_id: "C-20260706-0127", text: "C-20260706-0127 의 node_2 급변은 무엇을 해야 하나?",
+    expect: { run_status: "proposed", action: "INSPECT_NODE", origin_node: "node_2", event_ids: [], confidence: "low" } },
+  { id: "Q07", kind: "analyze", cycle_id: "C-20260706-0128", text: "C-20260706-0128 도 급변인가? (바로 앞도 비정상)",
+    expect: { run_status: "needs_review", quality: "insufficient_normal_prev" } },
+  { id: "Q08", kind: "analyze", cycle_id: "C-20260706-0199", text: "C-20260706-0199 사이클은 어땠나? (없는 번호)",
+    expect: { run_status: "failed", error_type: "NotFound" } },
+  { id: "Q09", kind: "analyze", cycle_id: "C-20260706-0108", text: "C-20260706-0108 은 진동이 높은데 이상인가?",
+    expect: { run_status: "no_action", observation: { node: "node_4", value: 0.45 } } },
+  { id: "Q10", kind: "exact", cycle_id: "C-20260706-0118", node: "node_2", text: "C-20260706-0118 의 node_2 속도는 정확히 얼마인가?",
+    expect: { method: "exact", value: 44.0 } },
+];

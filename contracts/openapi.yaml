@@ -1,0 +1,1538 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Jarvis Console API",
+    "version": "0.2.0",
+    "description": "목업/실제 API 공유 계약. 작업 스냅샷과 SSE 포함. 운영 이벤트 보존·페이지네이션은 백엔드 단계에서 확장."
+  },
+  "paths": {
+    "/api/v1/releases": {
+      "get": {
+        "operationId": "listReleases",
+        "responses": {
+          "200": {
+            "description": "成功 / success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Release"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/releases/{releaseId}/report": {
+      "get": {
+        "operationId": "getReport",
+        "parameters": [
+          {
+            "name": "releaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功 / success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/traces/{traceId}": {
+      "get": {
+        "operationId": "getTrace",
+        "parameters": [
+          {
+            "name": "traceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功 / success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trace"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drafts/{draftId}": {
+      "get": {
+        "operationId": "getDraft",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功 / success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/releases/{releaseId}/approvals": {
+      "post": {
+        "operationId": "approveRelease",
+        "parameters": [
+          {
+            "name": "releaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRelease"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 / success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or eligibility changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drafts/{draftId}/approvals": {
+      "post": {
+        "operationId": "approveDraft",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveDraft"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 / success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Draft or source revision changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/traces": {
+      "get": {
+        "operationId": "listTraces",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Trace"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drafts": {
+      "get": {
+        "operationId": "listDrafts",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Draft"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "operationId": "listTasks",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskSummary"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          },
+          "422": {
+            "description": "Invalid event sequence"
+          },
+          "503": {
+            "description": "Retry available"
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{taskId}": {
+      "get": {
+        "operationId": "getTaskSnapshot",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "at",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          },
+          "422": {
+            "description": "Invalid event sequence"
+          },
+          "503": {
+            "description": "Retry available"
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{taskId}/events": {
+      "get": {
+        "operationId": "streamTaskEvents",
+        "description": "SSE snapshot (TaskSnapshot), replay_end, stream_error. id=event-N. Monotonic seq. Reconnect after last received sequence; production retention gaps require snapshot refresh.",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": -1
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server sent events",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task missing"
+          },
+          "422": {
+            "description": "Invalid resume cursor"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Release": {
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "name",
+          "health",
+          "eligibility",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "health": {
+            "enum": [
+              "normal",
+              "warning",
+              "incident",
+              "unknown"
+            ],
+            "type": "string"
+          },
+          "eligibility": {
+            "enum": [
+              "eligible",
+              "blocked",
+              "unknown"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Metric": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "baseline",
+          "value",
+          "unit",
+          "criterion",
+          "status",
+          "samples"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "baseline": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "criterion": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "fail",
+              "unknown"
+            ]
+          },
+          "samples": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Agent": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "role",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Diagnosis": {
+        "type": "object",
+        "required": [
+          "id",
+          "facts",
+          "hypotheses",
+          "actions",
+          "traceIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hypotheses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "traceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Report": {
+        "type": "object",
+        "required": [
+          "release",
+          "operatingRelease",
+          "policyVersion",
+          "observedAt",
+          "metrics",
+          "blockers",
+          "diagnosis",
+          "agents",
+          "observation",
+          "approvals"
+        ],
+        "properties": {
+          "release": {
+            "$ref": "#/components/schemas/Release"
+          },
+          "operatingRelease": {
+            "type": "string"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "observedAt": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Metric"
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "diagnosis": {
+            "$ref": "#/components/schemas/Diagnosis"
+          },
+          "agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Agent"
+            }
+          },
+          "observation": {
+            "type": "object",
+            "required": [
+              "inputTokens",
+              "outputTokens",
+              "costUsd",
+              "p95",
+              "errorRate",
+              "pendingEvents",
+              "completeness",
+              "latency"
+            ],
+            "properties": {
+              "inputTokens": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "outputTokens": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "costUsd": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p95": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "errorRate": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "pendingEvents": {
+                "type": "integer"
+              },
+              "completeness": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "latency": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "time",
+                    "seconds"
+                  ],
+                  "properties": {
+                    "time": {
+                      "type": "string"
+                    },
+                    "seconds": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "releaseId",
+                "createdAt",
+                "action"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "releaseId": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TraceEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "parentId",
+          "name",
+          "at",
+          "durationMs",
+          "status",
+          "input",
+          "output",
+          "promptVersion",
+          "model"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "input": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Trace": {
+        "type": "object",
+        "required": [
+          "id",
+          "taskId",
+          "releaseId",
+          "checkpointId",
+          "events"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": "string"
+          },
+          "checkpointId": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TraceEvent"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Draft": {
+        "type": "object",
+        "required": [
+          "id",
+          "revision",
+          "sourceRevision",
+          "sender",
+          "recipient",
+          "subject",
+          "source",
+          "body",
+          "status",
+          "classificationReason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "sourceRevision": {
+            "type": "integer"
+          },
+          "sender": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "saved"
+            ]
+          },
+          "classificationReason": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApproveRelease": {
+        "type": "object",
+        "required": [
+          "expectedRevision",
+          "policyVersion",
+          "scope"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "type": "integer"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "limited"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApproveDraft": {
+        "type": "object",
+        "required": [
+          "expectedRevision",
+          "expectedSourceRevision",
+          "body"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "type": "integer"
+          },
+          "expectedSourceRevision": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ActionResult": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "message"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskSnapshot": {
+        "type": "object",
+        "required": [
+          "id",
+          "seq",
+          "lastSeq",
+          "revision",
+          "eventId",
+          "observedAt",
+          "title",
+          "sender",
+          "source",
+          "releaseId",
+          "status",
+          "stageId",
+          "nextAction",
+          "draftId",
+          "draftText",
+          "draftReady",
+          "stages",
+          "nodes",
+          "edges",
+          "events",
+          "eval",
+          "observe",
+          "diagnose"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "seq": {
+            "type": "number"
+          },
+          "lastSeq": {
+            "type": "number"
+          },
+          "revision": {
+            "type": "number"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "observedAt": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "running",
+              "completed",
+              "blocked",
+              "waiting"
+            ]
+          },
+          "stageId": {
+            "type": "string"
+          },
+          "nextAction": {
+            "type": "string"
+          },
+          "draftId": {
+            "type": "string"
+          },
+          "draftText": {
+            "type": "string"
+          },
+          "draftReady": {
+            "type": "boolean"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "actor",
+                "state",
+                "input",
+                "output",
+                "event"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "actor": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "idle",
+                    "running",
+                    "completed",
+                    "blocked",
+                    "waiting"
+                  ]
+                },
+                "input": {
+                  "type": "string"
+                },
+                "output": {
+                  "type": "string"
+                },
+                "event": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "role",
+                "kind",
+                "x",
+                "y",
+                "state",
+                "taskId",
+                "contextTokens",
+                "processMemoryMb",
+                "memory"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "gateway",
+                    "supervisor",
+                    "agent",
+                    "memory"
+                  ]
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "idle",
+                    "running",
+                    "completed",
+                    "blocked",
+                    "waiting"
+                  ]
+                },
+                "taskId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "contextTokens": {
+                  "type": "number"
+                },
+                "processMemoryMb": {
+                  "type": "number"
+                },
+                "memory": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "key",
+                      "value",
+                      "scope",
+                      "source",
+                      "updatedEvent",
+                      "tokens"
+                    ],
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "type": "string",
+                        "enum": [
+                          "task",
+                          "policy",
+                          "checkpoint"
+                        ]
+                      },
+                      "source": {
+                        "type": "string"
+                      },
+                      "updatedEvent": {
+                        "type": "number"
+                      },
+                      "tokens": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "source",
+                "target",
+                "kind",
+                "label",
+                "active",
+                "eventId",
+                "payload"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "target": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "delegate",
+                    "handoff",
+                    "memory",
+                    "evaluate"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                },
+                "active": {
+                  "type": "boolean"
+                },
+                "eventId": {
+                  "type": "string"
+                },
+                "payload": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "seq",
+                "actor",
+                "message",
+                "kind"
+              ],
+              "properties": {
+                "seq": {
+                  "type": "number"
+                },
+                "actor": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "eval": {
+            "type": "object",
+            "required": [
+              "faithfulness",
+              "classification",
+              "violations"
+            ],
+            "properties": {
+              "faithfulness": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "classification": {
+                "type": "string"
+              },
+              "violations": {
+                "type": "number"
+              }
+            }
+          },
+          "observe": {
+            "type": "object",
+            "required": [
+              "tokens",
+              "durationSeconds",
+              "costUsd",
+              "retryCount"
+            ],
+            "properties": {
+              "tokens": {
+                "type": "number"
+              },
+              "durationSeconds": {
+                "type": "number"
+              },
+              "costUsd": {
+                "type": "number"
+              },
+              "retryCount": {
+                "type": "number"
+              }
+            }
+          },
+          "diagnose": {
+            "type": "object",
+            "required": [
+              "status",
+              "fact",
+              "hypothesis",
+              "action"
+            ],
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "fact": {
+                "type": "string"
+              },
+              "hypothesis": {
+                "type": "string"
+              },
+              "action": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "TaskSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "sender",
+          "status",
+          "releaseId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+[Unit]
+Description=Jarvis backup
+After=jarvis-mail.service
+[Service]
+Type=oneshot
+WorkingDirectory=/docker/jarvis-integration/server
+ExecStart=/docker/jarvis-integration/server/.venv/bin/python operations.py backup
+UMask=0077
+TimeoutStartSec=300

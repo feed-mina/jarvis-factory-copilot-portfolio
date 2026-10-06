@@ -1,0 +1,21 @@
+{
+  "id": "/widget-work",
+  "name": "Javis 에이전트 관제",
+  "short_name": "Javis",
+  "description": "에이전트 작업 보고서와 진행 상태를 확인하는 개인 관제 앱",
+  "lang": "ko-KR",
+  "start_url": "/widget-work",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#101b30",
+  "icons": [
+    {"src": "/icons/javis-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/javis-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/javis-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "위젯 작업", "short_name": "위젯", "url": "/widget-work", "icons": [{"src": "/icons/javis-192.png", "sizes": "192x192"}]},
+    {"name": "에이전트 실행", "short_name": "에이전트", "url": "/runtime", "icons": [{"src": "/icons/javis-192.png", "sizes": "192x192"}]}
+  ]
+}

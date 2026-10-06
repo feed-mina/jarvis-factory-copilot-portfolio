@@ -1,0 +1,20 @@
+name: jarvis-mail
+services:
+  postgres:
+    image: postgres@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+    ports:
+      - "127.0.0.1:15432:5432"
+    environment:
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD: ${JARVIS_DB_PASSWORD:?Runtime configuration required}
+      POSTGRES_DB: jarvis
+    volumes:
+      - jarvis_mail_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis -d jarvis"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+volumes:
+  jarvis_mail_data:

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "S01",
+    "title": "메일 작업실 · 수신에서 답장 검토",
+    "route": "/work/:id · 실제 모드",
+    "source": "src/v2/LiveConsole.tsx",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S01.png",
+    "components": [
+      "assets/components/S01-1.png",
+      "assets/components/S01-2.png"
+    ]
+  },
+  {
+    "id": "S02",
+    "title": "수정·승인·Gmail 초안 저장",
+    "route": "/work/:id · 실제 모드",
+    "source": "server/workflow.py",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S02.png",
+    "components": [
+      "assets/components/S02-1.png",
+      "assets/components/S02-2.png"
+    ]
+  },
+  {
+    "id": "S03",
+    "title": "에이전트 실행 · 실제 노드 이력",
+    "route": "/runtime · 실제 모드",
+    "source": "src/v2/OperationsConsole.tsx",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S03.png",
+    "components": [
+      "assets/components/S03-1.png",
+      "assets/components/S03-2.png"
+    ]
+  },
+  {
+    "id": "S04",
+    "title": "Eval Studio · 합성 사례 평가",
+    "route": "/eval · 실제 모드",
+    "source": "server/evaluations.py",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S04.png",
+    "components": [
+      "assets/components/S04-1.png",
+      "assets/components/S04-2.png"
+    ]
+  },
+  {
+    "id": "S05",
+    "title": "Release Gate · 비교와 사람 검토",
+    "route": "/release · 실제 모드",
+    "source": "src/v2/ReleaseConsole.tsx",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S05.png",
+    "components": [
+      "assets/components/S05-1.png",
+      "assets/components/S05-2.png"
+    ]
+  },
+  {
+    "id": "S06",
+    "title": "목업 · 감독 그래프와 버전 판정",
+    "route": "/topology · /decisions/:id · mock",
+    "source": "src/v2/ConsoleApp.tsx",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S06.png",
+    "components": [
+      "assets/components/S06-1.png",
+      "assets/components/S06-2.png"
+    ]
+  },
+  {
+    "id": "S07",
+    "title": "로컬 연결 설정과 운영 도구",
+    "route": "/setup · backend 모듈",
+    "source": "backend/app.py · server/operations.py",
+    "method": "code-based-reconstruction",
+    "data": "illustrative",
+    "page": "assets/pages/S07.png",
+    "components": [
+      "assets/components/S07-1.png",
+      "assets/components/S07-2.png"
+    ]
+  }
+]

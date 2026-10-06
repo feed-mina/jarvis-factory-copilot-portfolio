@@ -1,0 +1,13 @@
+# Factory AI Copilot 샘플 — 읽기 전용 Worker + 정적 화면. D1·KV·시크릿 없음.
+# 배포: cd samples/factory-copilot && npx wrangler deploy  →  https://jarvis-factory-copilot-sample.<계정서브도메인>.workers.dev
+name = "jarvis-factory-copilot-sample"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+html_handling = "auto-trailing-slash"
+not_found_handling = "none"

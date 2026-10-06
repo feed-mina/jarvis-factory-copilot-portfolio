@@ -1,0 +1,20 @@
+[Unit]
+Description=Jarvis approved Gmail draft workflow
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/docker/jarvis-integration/server
+ExecStart=/docker/jarvis-integration/server/.venv/bin/uvicorn api:app --host 127.0.0.1 --port 8010 --workers 1 --no-access-log
+Restart=on-failure
+RestartSec=5
+UMask=0077
+Environment=PYTHONUNBUFFERED=1
+Environment=LANGSMITH_TRACING=false
+Environment=LANGCHAIN_TRACING_V2=false
+Environment=JARVIS_AUTOMATIC_COLLECTION=true
+Environment=JARVIS_GMAIL_ACCOUNT=mailbox@example.com
+
+[Install]
+WantedBy=multi-user.target

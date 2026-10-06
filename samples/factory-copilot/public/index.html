@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<title>Factory AI Copilot · 샘플</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="demo-bar" role="note">
+    <span class="demo-tag">공개 샘플</span>
+    <span class="demo-text">허구 센서 데이터 30건 · LLM·DB·로그인 없음 · 승인·명령은 이 브라우저 안에서만 기록되고 진짜 기계에는 가지 않습니다</span>
+    <button type="button" id="reset" class="btn ghost">체험 초기화</button>
+  </div>
+  <header class="top">
+    <h1>Factory AI Copilot <small>공정 판단 → 원인 추적 → 행동 제안 → <b>사람 승인</b> → 모의 명령</small></h1>
+    <span class="me">reviewer@example.com · 체험 계정</span>
+  </header>
+
+  <div class="layout">
+    <aside class="queues card" aria-label="대기 줄">
+      <h2>대기 줄</h2>
+      <p class="sub">자동으로 넘어가는 버튼은 없습니다 (전부 사람 · R8)</p>
+      <div id="queues"></div>
+      <p class="sub" id="queueHint">분석을 실행하면 결과가 줄에 쌓입니다.</p>
+      <div id="queueList" class="qlist"></div>
+    </aside>
+
+    <main>
+      <section class="cards" id="cards"></section>
+
+      <section class="card ask">
+        <h2>질문</h2>
+        <div class="row">
+          <label>정답이 정해진 질문 10개 <select id="question"></select></label>
+          <label>또는 사이클 직접 고르기 <select id="cycle"></select></label>
+          <button type="button" id="analyze" class="btn primary">분석 실행</button>
+        </div>
+        <p class="sub">Monitor 는 규칙 2개(결정대장 2026-09-09 · 08-11)로만 후보를 잡고, Root Cause 는 Tool 로 앞 5사이클을 거슬러 시작점을 ID 로 찍습니다. 답에는 근거 ID 가 문장보다 먼저 나옵니다.</p>
+        <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+      </section>
+
+      <section id="result"></section>
+
+      <section class="card" id="ledgerCard">
+        <details><summary>실행 기록(원장) — 뒤에만 붙고 지우지 않습니다</summary><div id="ledger" class="ledger"></div></details>
+      </section>
+    </main>
+  </div>
+  <footer>Factory AI Copilot 샘플 · 설계: ME Phase 3.5 D08~D19 · 승인 구조: Javis <code>server/workflow.py</code> approve() 이식 · 실제 PLC·로봇 연결 없음</footer>
+</div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
