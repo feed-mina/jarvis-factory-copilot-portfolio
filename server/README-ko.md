@@ -77,6 +77,37 @@ cd /docker/jarvis-integration/server
 - 재시작 중이던 분석은 analysis_failed, 저장 중이던 작업은 save_uncertain으로 복구합니다.
 - Gmail 테스트 앱의 재동의가 필요하면 기존 OAuth 연결 절차로 갱신해야 합니다.
 
+## LangGraph 흐름과 LangChain 연결
+
+2026-11-11 추가. 메일 한 건의 전체 흐름을 `workflow.py`의 그래프(`lifecycle_graph`) 하나로 묶었습니다. 노드 이름은 코드와 같습니다.
+
+```mermaid
+flowchart TD
+    S([시작]) --> analyze["analyze<br/>분류·요약·초안 작성"]
+    analyze -->|답장 필요| critic_review["critic_review<br/>Critic 검수 대기"]
+    analyze -->|답장 불필요| no_reply_needed["no_reply_needed"]
+    no_reply_needed --> E([끝])
+    critic_review -->|검수 통과| human_approval["human_approval<br/>사람 승인 대기"]
+    critic_review -->|차단·실패·아직 안 함| critic_review
+    human_approval -->|승인 기록됨| save_draft["save_draft<br/>Gmail 초안 저장 대기"]
+    human_approval -->|승인 거절·아직 안 함| human_approval
+    human_approval -->|초안 수정됨| critic_review
+    save_draft -->|저장 확인| E
+    save_draft -->|결과 불확실| reconcile_save["reconcile_save<br/>Gmail 조회로만 확인"]
+    save_draft -->|저장 거절·아직 안 함| save_draft
+    save_draft -->|초안 수정됨| critic_review
+    reconcile_save -->|초안 찾음| E
+    reconcile_save -->|아직 못 찾음| reconcile_save
+```
+
+- `analyze`가 끝나면 그래프는 `critic_review`에서 멈춥니다(LangGraph `interrupt`). 그 뒤 운영자가 검수·승인·저장을 누를 때마다 해당 노드가 `Command(resume=...)`로 이어서 실행되고, 다음 대기 노드에서 다시 멈춥니다. 멈춘 위치는 PostgreSQL 체크포인트에 남아 서버를 재시작해도 이어집니다.
+- 답장이 필요 없는 알림·광고는 `no_reply_needed`로 가서 끝납니다. 승인·저장 노드로 가는 길이 없습니다.
+- `save_draft`로 들어가는 길은 `human_approval` 하나뿐입니다. 그리고 판정은 예전과 똑같이 DB가 합니다(버전 일치, 승인 기록과 내용 지문, 한 번만 저장). 노드는 기존 검사 코드를 그대로 부르기 때문에, 그래프에 저장 명령을 직접 넣어도 승인 기록이 없으면 저장되지 않습니다.
+- 초안 수정, 일괄 검수, 재시작 복구는 그래프 밖에서 DB 상태를 바꿉니다. 다음 동작 때 그래프가 DB 상태를 읽고 맞는 노드로 옮겨 간 뒤 실행합니다. 이 그래프가 생기기 전의 작업이나 체크포인트 장애 때는 같은 검사를 그래프 없이 실행하고 `graph_bypassed` 이벤트를 남깁니다.
+- 모델 호출은 `chains.py`의 LangChain 체인(프롬프트 → 모델 → 출력 형식 검사)을 거칩니다. 프롬프트와 출력 형식은 `pipeline.py`의 것을 복사 없이 가져다 쓰고, 기본 모델은 기존 Hermes 역할 실행기(`role_runner.py`)를 감싼 어댑터입니다. 형식이 틀린 모델 답은 받아들이지 않고 실패로 처리합니다. `JARVIS_LANGCHAIN_ROLES=0`이면 예전 직접 호출로 돌아갑니다.
+- 버전 판정(release gate)의 후보 평가는 예전처럼 별도 프로세스에서 `pipeline.py` 사본과 자체 역할 호출로 돌며 이 체인을 거치지 않습니다. 후보가 `pipeline.py`에 반영되면 체인은 바뀐 프롬프트를 그대로 읽습니다.
+- 검증 범위: 가짜 모델·가짜 Gmail과 로컬 PostgreSQL 16으로만 테스트했습니다(`test_graph.py`, `test_chains.py`). 실제 Hermes·Gmail·LangSmith에는 연결해 보지 않았습니다.
+
 ## 검증 범위와 남은 일
 
 분리된 jarvis_test DB에서 12개 테스트 통과. 실제 메일 수집·분석·추적, 중복 수집 방지, 서비스 재시작 뒤 상태 유지 확인.
