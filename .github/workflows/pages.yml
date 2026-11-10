@@ -1,0 +1,49 @@
+# Factory AI Copilot 샘플의 정적 화면(samples/factory-copilot/public)을 GitHub Pages 에 올린다.
+# 비밀키 없음. 처음 한 번만: Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
+# 주소(예상): https://feed-mina.github.io/jarvis-factory-copilot-portfolio/
+# Pages 는 정적 호스팅이라 /api/* (worker.js) 는 없다 — 화면·승인 흐름은 브라우저 안에서 전부 돈다.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "samples/factory-copilot/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 샘플 테스트 (의존성 설치 없이 node --test)
+        working-directory: samples/factory-copilot
+        run: node --test tests/*.test.mjs
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: samples/factory-copilot/public
+      - id: deployment
+        uses: actions/deploy-pages@v4
