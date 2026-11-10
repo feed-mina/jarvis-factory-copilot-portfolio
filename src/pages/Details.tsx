@@ -316,7 +316,8 @@ function Observe({ r }: { r: Report }) {
               </table>
             </details>
             <p className="j-subtitle mt-3">
-              기준: {r.metrics.find((m) => m.id === "p95")?.criterion}. 전체 p95는 구간별 p95의 평균이 아닙니다.
+              기준: {r.metrics.find((m) => m.id === "p95")?.criterion}. 전체
+              p95는 구간별 p95의 평균이 아닙니다.
             </p>
           </div>
         </Panel>
@@ -552,7 +553,8 @@ function ReleaseReview({ r }: { r: Report }) {
               <>
                 <Status value="pass" />
                 <p className="j-subtitle mt-3">
-                  현재 정책에서 차단 사유가 없습니다. 대상 버전과 복구 범위를 확인하고 승인해 주세요.
+                  현재 정책에서 차단 사유가 없습니다. 대상 버전과 복구 범위를
+                  확인하고 승인해 주세요.
                 </p>
               </>
             )}

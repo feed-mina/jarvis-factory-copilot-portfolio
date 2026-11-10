@@ -18,6 +18,28 @@ npx wrangler deploy      # https://jarvis-factory-copilot-sample.<계정서브�
 
 브라우저만으로도 된다: `public/` 을 정적으로 띄우면 화면과 승인 흐름이 전부 돈다(`/api/*` 는 Worker 에서만).
 
+## 공개하기
+
+아직 어디에도 배포되어 있지 않다. 아래 둘 중 하나만 해도 방문자가 눌러 볼 수 있다.
+
+**A. GitHub Pages — 비밀키 없음 (화면·승인 흐름 전부, `/api/*` 는 없음)**
+
+1. 저장소 **Settings → Pages → Build and deployment → Source** 를 **GitHub Actions** 로 바꾼다. (처음 한 번)
+2. **Actions** 탭 → 왼쪽 **pages** → **Run workflow** (브랜치 `main`) 를 누른다.
+3. 초록 체크가 뜨면 주소는 `https://feed-mina.github.io/jarvis-factory-copilot-portfolio/` 일 것이다 — **배포 후 확인 필요**.
+
+이후에는 `main` 에서 `samples/factory-copilot/` 아래가 바뀔 때마다 자동으로 다시 올라간다. 1번을 하기 전에 워크플로가 돌면 실패(빨간 X)로 남는데, 1번을 한 뒤 다시 실행하면 된다.
+
+**B. Cloudflare Workers — 선택 (화면 + 읽기 전용 `/api/*`)**
+
+1. 저장소 **Settings → Secrets and variables → Actions → New repository secret** 로 2개를 넣는다.
+   - `CLOUDFLARE_API_TOKEN` — Cloudflare 대시보드 → My Profile → API Tokens → Create Token → "Edit Cloudflare Workers" 템플릿
+   - `CLOUDFLARE_ACCOUNT_ID` — Cloudflare 대시보드 → Workers & Pages 화면 오른쪽의 Account ID
+2. **Actions** 탭 → **deploy-sample-worker** → **Run workflow**. (시크릿이 없으면 무엇이 빠졌는지 알려 주고 멈춘다)
+3. 주소는 실행 로그 끝에 나온다: `https://jarvis-factory-copilot-sample.<계정서브도메인>.workers.dev` — **배포 후 확인 필요**.
+
+화면은 `./style.css` · `./app.js` 처럼 상대 경로만 쓰므로 Pages 의 하위 경로(`/jarvis-factory-copilot-portfolio/`)와 Worker 의 루트(`/`) 양쪽에서 같은 파일로 돈다.
+
 ## 흐름과 멈추는 곳
 
 ```

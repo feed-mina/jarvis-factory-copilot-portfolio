@@ -15,6 +15,7 @@
 | 목업 응답       | MSW(Mock Service Worker)                       | 실제 HTTP 요청을 가로채 계약과 같은 형식으로 예시 응답       |
 | 백엔드          | Python + FastAPI + Pydantic                    | 사용자 요청, 조회·명령 API, 입력 검증                        |
 | 에이전트        | Python LangGraph                               | 총괄·분야 감독·전문 에이전트, 중단·재개                      |
+| 모델 호출 체인  | langchain-core (LCEL)                          | 역할별 프롬프트 → 모델 → 출력 형식 검사; 기본 모델은 Hermes 역할 실행기 |
 | LLMOps          | LangSmith SDK + Cloud                          | 실행 추적, 평가 데이터셋·실험·피드백·운영 관찰               |
 | 영속 상태       | PostgreSQL + SQLAlchemy + Alembic              | 에이전트 등록부, 이벤트 원장, 평가·진단 요약, 승인·배포 이력 |
 | 실행 복구       | langgraph-checkpoint-postgres                  | 작업별 체크포인트; 감사 원장과 별도 테이블                   |

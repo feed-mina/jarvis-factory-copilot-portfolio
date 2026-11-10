@@ -1,20 +1,101 @@
-import fs from 'node:fs/promises';
-import {createServer} from 'vite';
-const server=await createServer({mode:'mock',server:{middlewareMode:true},appType:'custom'});
-try{
- const {default:React}=await import('react'),{renderToString}=await import('react-dom/server'),{MemoryRouter}=await import('react-router-dom'),{QueryClient,QueryClientProvider}=await import('@tanstack/react-query');
- const {ConsoleApp}=await server.ssrLoadModule('/src/v2/ConsoleApp.tsx'),{freshReports,draft}=await server.ssrLoadModule('/src/mocks/data.ts'),{taskSnapshot}=await server.ssrLoadModule('/src/mocks/workspace.ts');
- const routes=[['/work/mail-014?at=0','01 · 메일 수신'],['/work/mail-014?at=2','02 · 회신 필요 분류'],['/work/mail-014?at=4','03 · 근거 없는 초안 차단'],['/work/mail-014?at=7','04 · 재작성 완료와 사용자 검수'],['/topology?at=4&node=reviewer','05 · 감독 그래프와 검수 메모리'],['/topology?at=5&edge=e5','06 · 수정 요청 엣지와 전달 내용'],['/topology?at=7&node=memory','07 · 작업 메모리와 체크포인트'],['/decisions/r0.8.2','08 · 버전 판정 — 개선 필요'],['/decisions/r0.8.3','09 · 버전 판정 — 제한 운영 가능'],['/decisions/r0.8.4','10 · 버전 판정 — 근거 부족']];
- const assets=await fs.readdir('dist/assets');const css=await fs.readFile('dist/assets/'+assets.find(x=>x.endsWith('.css')),'utf8');
- const rawCss=await fs.readFile('src/styles.css','utf8'),custom=await fs.readFile('src/v2/console.css','utf8'),flowCss=await fs.readFile('node_modules/@xyflow/react/dist/style.css','utf8');
- const pdfCss=rawCss.slice(rawCss.indexOf(':root'))+'\n'+flowCss+'\n'+custom;
- await fs.mkdir('output/review-pages',{recursive:true});const snapshots=[];
- for(const [route,title] of routes){const client=new QueryClient({defaultOptions:{queries:{retry:false,staleTime:Infinity}}}),reports=freshReports(),params=new URL(route,'http://mock').searchParams,at=params.has('at')?Number(params.get('at')):undefined,s=taskSnapshot(at??7);
- client.setQueryData(['releases'],Object.values(reports).map(r=>r.release));Object.entries(reports).forEach(([id,r])=>client.setQueryData(['report',id],r));client.setQueryData(['draft',draft.id],draft);client.setQueryData(['tasks'],[{id:s.id,title:s.title,sender:s.sender,status:s.status,releaseId:s.releaseId}]);client.setQueryData(['task','mail-014',at],s);
- const content=renderToString(React.createElement(QueryClientProvider,{client},React.createElement(MemoryRouter,{initialEntries:[route]},React.createElement(ConsoleApp))));snapshots.push({route,title,content});client.clear();
- const page=`<!doctype html><html lang="ko"><meta charset="utf-8"><style>${pdfCss}</style><style>@font-face{font-family:'Noto Sans CJK KR';src:url('../../public/fonts/NotoSansCJKkr-Regular.otf')}@page{size:1480px 1820px;margin:24px}body{background:white}.print-heading{font-family:'Noto Sans CJK KR';padding:10px 24px 16px;color:#647c90;font-size:12px}.console-v2{min-height:0}.console-body{padding:22px}.console-v2 button[class*="inline-flex"]{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border:0;border-radius:5px;background:#2448be;color:white;font-size:13px}.console-v2 button[class*="bg-card"]{background:white;color:#203246;border:1px solid #d5dee8}.console-footer select{display:none}.react-flow__controls{display:none}.console-header{height:70px}.node-inspector{max-height:none;overflow:visible}.graph-accessible{display:none}.react-flow__node{position:absolute}.mail-room,.ops-strip,.topology-room,.decision-grid{break-inside:avoid}.console-v2 a{text-decoration:none}.console-header nav{flex-shrink:0}.console-header nav a{white-space:nowrap;min-width:100px}.playback label{white-space:nowrap;min-width:270px}.playback button[class*="inline-flex"]{height:40px;width:150px;flex-shrink:0}.playback b{white-space:nowrap}.graph-legend{width:750px;flex-shrink:0}.graph-legend span{white-space:nowrap}.topology-toolbar label{white-space:nowrap;min-width:180px}.task-timeline button{display:block;position:relative;min-height:70px;height:70px;padding:10px 0}.task-timeline button>div{margin-left:27px;margin-right:66px}.task-timeline .event-seq{position:absolute;top:12px;left:0}.task-timeline .phase-tag{position:absolute;right:0;top:12px}.draft-pane footer button[class*="inline-flex"]{height:40px}.decision-head button[class*="inline-flex"]{height:40px}.react-flow__container{position:absolute;top:0;left:0;width:100%;height:100%}.react-flow__viewport{transform-origin:0 0}.react-flow__node{top:0;left:0;transform-origin:0 0}.react-flow__edges{position:absolute;top:0;left:0;width:940px;height:620px}.react-flow__edges svg{position:absolute;top:0;left:0;overflow:visible}.graph-canvas{height:700px}.topology-room{display:block;position:relative;min-height:1040px}.graph-canvas{position:absolute;top:0;left:0;width:calc(100% - 310px);height:700px}.node-inspector{margin-left:calc(100% - 310px);width:310px}.graph-canvas .react-flow{position:absolute!important;top:0;left:0}</style><div class="print-heading">자비스 목업 v2 / ${title} · 동일 React 소스의 정적 렌더링 · 예시 데이터</div>${content}</html>`;
- await fs.writeFile('output/review-pages/'+title.slice(0,2)+'.html',page);
- }
- const html=`<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>자비스 목업 v2 검수</title><style>${css}[hidden]{display:none!important}.review-banner{padding:12px 24px;background:#fff0d4;font:13px sans-serif}.review-banner select{margin-left:20px}</style><header class="review-banner">동일 React 소스의 정적 검수 · 동작 검수는 소스 프로젝트에서 확인<select id="picker">${snapshots.map((s,i)=>`<option value="${i}">${s.title}</option>`).join('')}</select></header>${snapshots.map((s,i)=>`<section data-screen="${i}" ${i?'hidden':''}>${s.content}</section>`).join('')}<script>const list=${JSON.stringify(routes.map(r=>r[0]))};function show(i){document.querySelectorAll('[data-screen]').forEach(e=>e.hidden=e.dataset.screen!=i);document.getElementById('picker').value=i;window.scrollTo(0,0)}document.getElementById('picker').onchange=e=>show(e.target.value);document.addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();let i=list.indexOf(a.getAttribute('href'));if(i<0)i=list.findIndex(r=>r.split('?')[0]===a.getAttribute('href').split('?')[0]);if(i>=0)show(i)}});document.querySelectorAll('[data-screen] button,[data-screen] input,[data-screen] textarea,[data-screen] select').forEach(e=>e.disabled=true);</script></html>`;
- await fs.writeFile('jarvis-review.html',html);await fs.writeFile('output/review-pages/manifest.json',JSON.stringify(routes));console.log('Exported '+routes.length+' source-rendered screens');
-}finally{await server.close()}
+import fs from "node:fs/promises";
+import { createServer } from "vite";
+const server = await createServer({
+  mode: "mock",
+  server: { middlewareMode: true },
+  appType: "custom",
+});
+try {
+  const { default: React } = await import("react"),
+    { renderToString } = await import("react-dom/server"),
+    { MemoryRouter } = await import("react-router-dom"),
+    { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query");
+  const { ConsoleApp } = await server.ssrLoadModule("/src/v2/ConsoleApp.tsx"),
+    { freshReports, draft } = await server.ssrLoadModule("/src/mocks/data.ts"),
+    { taskSnapshot } = await server.ssrLoadModule("/src/mocks/workspace.ts");
+  const routes = [
+    ["/work/mail-014?at=0", "01 · 메일 수신"],
+    ["/work/mail-014?at=2", "02 · 회신 필요 분류"],
+    ["/work/mail-014?at=4", "03 · 근거 없는 초안 차단"],
+    ["/work/mail-014?at=7", "04 · 재작성 완료와 사용자 검수"],
+    ["/topology?at=4&node=reviewer", "05 · 감독 그래프와 검수 메모리"],
+    ["/topology?at=5&edge=e5", "06 · 수정 요청 엣지와 전달 내용"],
+    ["/topology?at=7&node=memory", "07 · 작업 메모리와 체크포인트"],
+    ["/decisions/r0.8.2", "08 · 버전 판정 — 개선 필요"],
+    ["/decisions/r0.8.3", "09 · 버전 판정 — 제한 운영 가능"],
+    ["/decisions/r0.8.4", "10 · 버전 판정 — 근거 부족"],
+  ];
+  const assets = await fs.readdir("dist/assets");
+  const css = await fs.readFile(
+    "dist/assets/" + assets.find((x) => x.endsWith(".css")),
+    "utf8",
+  );
+  const rawCss = await fs.readFile("src/styles.css", "utf8"),
+    custom = await fs.readFile("src/v2/console.css", "utf8"),
+    flowCss = await fs.readFile(
+      "node_modules/@xyflow/react/dist/style.css",
+      "utf8",
+    );
+  const pdfCss =
+    rawCss.slice(rawCss.indexOf(":root")) + "\n" + flowCss + "\n" + custom;
+  await fs.mkdir("output/review-pages", { recursive: true });
+  const snapshots = [];
+  for (const [route, title] of routes) {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+      }),
+      reports = freshReports(),
+      params = new URL(route, "http://mock").searchParams,
+      at = params.has("at") ? Number(params.get("at")) : undefined,
+      s = taskSnapshot(at ?? 7);
+    client.setQueryData(
+      ["releases"],
+      Object.values(reports).map((r) => r.release),
+    );
+    Object.entries(reports).forEach(([id, r]) =>
+      client.setQueryData(["report", id], r),
+    );
+    client.setQueryData(["draft", draft.id], draft);
+    client.setQueryData(
+      ["tasks"],
+      [
+        {
+          id: s.id,
+          title: s.title,
+          sender: s.sender,
+          status: s.status,
+          releaseId: s.releaseId,
+        },
+      ],
+    );
+    client.setQueryData(["task", "mail-014", at], s);
+    const content = renderToString(
+      React.createElement(
+        QueryClientProvider,
+        { client },
+        React.createElement(
+          MemoryRouter,
+          { initialEntries: [route] },
+          React.createElement(ConsoleApp),
+        ),
+      ),
+    );
+    snapshots.push({ route, title, content });
+    client.clear();
+    const page = `<!doctype html><html lang="ko"><meta charset="utf-8"><style>${pdfCss}</style><style>@font-face{font-family:'Noto Sans CJK KR';src:url('../../public/fonts/NotoSansCJKkr-Regular.otf')}@page{size:1480px 1820px;margin:24px}body{background:white}.print-heading{font-family:'Noto Sans CJK KR';padding:10px 24px 16px;color:#647c90;font-size:12px}.console-v2{min-height:0}.console-body{padding:22px}.console-v2 button[class*="inline-flex"]{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border:0;border-radius:5px;background:#2448be;color:white;font-size:13px}.console-v2 button[class*="bg-card"]{background:white;color:#203246;border:1px solid #d5dee8}.console-footer select{display:none}.react-flow__controls{display:none}.console-header{height:70px}.node-inspector{max-height:none;overflow:visible}.graph-accessible{display:none}.react-flow__node{position:absolute}.mail-room,.ops-strip,.topology-room,.decision-grid{break-inside:avoid}.console-v2 a{text-decoration:none}.console-header nav{flex-shrink:0}.console-header nav a{white-space:nowrap;min-width:100px}.playback label{white-space:nowrap;min-width:270px}.playback button[class*="inline-flex"]{height:40px;width:150px;flex-shrink:0}.playback b{white-space:nowrap}.graph-legend{width:750px;flex-shrink:0}.graph-legend span{white-space:nowrap}.topology-toolbar label{white-space:nowrap;min-width:180px}.task-timeline button{display:block;position:relative;min-height:70px;height:70px;padding:10px 0}.task-timeline button>div{margin-left:27px;margin-right:66px}.task-timeline .event-seq{position:absolute;top:12px;left:0}.task-timeline .phase-tag{position:absolute;right:0;top:12px}.draft-pane footer button[class*="inline-flex"]{height:40px}.decision-head button[class*="inline-flex"]{height:40px}.react-flow__container{position:absolute;top:0;left:0;width:100%;height:100%}.react-flow__viewport{transform-origin:0 0}.react-flow__node{top:0;left:0;transform-origin:0 0}.react-flow__edges{position:absolute;top:0;left:0;width:940px;height:620px}.react-flow__edges svg{position:absolute;top:0;left:0;overflow:visible}.graph-canvas{height:700px}.topology-room{display:block;position:relative;min-height:1040px}.graph-canvas{position:absolute;top:0;left:0;width:calc(100% - 310px);height:700px}.node-inspector{margin-left:calc(100% - 310px);width:310px}.graph-canvas .react-flow{position:absolute!important;top:0;left:0}</style><div class="print-heading">자비스 목업 v2 / ${title} · 동일 React 소스의 정적 렌더링 · 예시 데이터</div>${content}</html>`;
+    await fs.writeFile(
+      "output/review-pages/" + title.slice(0, 2) + ".html",
+      page,
+    );
+  }
+  const html = `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>자비스 목업 v2 검수</title><style>${css}[hidden]{display:none!important}.review-banner{padding:12px 24px;background:#fff0d4;font:13px sans-serif}.review-banner select{margin-left:20px}</style><header class="review-banner">동일 React 소스의 정적 검수 · 동작 검수는 소스 프로젝트에서 확인<select id="picker">${snapshots.map((s, i) => `<option value="${i}">${s.title}</option>`).join("")}</select></header>${snapshots.map((s, i) => `<section data-screen="${i}" ${i ? "hidden" : ""}>${s.content}</section>`).join("")}<script>const list=${JSON.stringify(routes.map((r) => r[0]))};function show(i){document.querySelectorAll('[data-screen]').forEach(e=>e.hidden=e.dataset.screen!=i);document.getElementById('picker').value=i;window.scrollTo(0,0)}document.getElementById('picker').onchange=e=>show(e.target.value);document.addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();let i=list.indexOf(a.getAttribute('href'));if(i<0)i=list.findIndex(r=>r.split('?')[0]===a.getAttribute('href').split('?')[0]);if(i>=0)show(i)}});document.querySelectorAll('[data-screen] button,[data-screen] input,[data-screen] textarea,[data-screen] select').forEach(e=>e.disabled=true);</script></html>`;
+  await fs.writeFile("jarvis-review.html", html);
+  await fs.writeFile(
+    "output/review-pages/manifest.json",
+    JSON.stringify(routes),
+  );
+  console.log("Exported " + routes.length + " source-rendered screens");
+} finally {
+  await server.close();
+}

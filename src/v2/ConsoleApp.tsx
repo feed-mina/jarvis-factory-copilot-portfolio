@@ -1,7 +1,88 @@
-import {LiveConsole} from './LiveConsole';
-import {useState} from 'react';
-import {Routes,Route,NavLink,Navigate,useLocation} from 'react-router-dom';
-import {MailRoom} from './MailRoom';
-import {Topology} from './Topology';
-import {DecisionRoom} from './DecisionRoom';
-export function ConsoleApp(){const location=useLocation();const [scenario,setScenario]=useState('normal'),mock=import.meta.env.VITE_ENABLE_MOCKS==='true';if(!mock)return <LiveConsole/>;return <div className="console-v2"><header className="console-header"><div className="console-brand"><span className="brand-symbol">J</span><strong>자비스</strong><span>에이전트 관제</span></div><nav aria-label="주요 작업"><NavLink to="/work/mail-014">메일 작업실</NavLink><NavLink to="/topology">에이전트 감독</NavLink><NavLink className={location.pathname.startsWith("/decisions/")?"active":""} to="/decisions/r0.8.2">버전 판정</NavLink></nav><div className="environment-tag">{mock?'목업 / 예시 데이터':'로컬 운영'}</div></header><main className="console-body" key={scenario}><Routes><Route path="/" element={<Navigate to="/work/mail-014" replace/>}/><Route path="/work" element={<Navigate to="/work/mail-014" replace/>}/><Route path="/work/:id" element={<MailRoom/>}/><Route path="/topology" element={<Topology/>}/><Route path="/decisions/:id" element={<DecisionRoom/>}/><Route path="*" element={<Navigate to="/work/mail-014" replace/>}/></Routes></main><footer className="console-footer"><span>{mock?'실제 메일·에이전트에 연결되지 않은 검수용 목업입니다.':'관제의 승인과 외부 작업 권한은 서버에서 다시 검사합니다.'}</span>{mock&&<label>검수 상태<select aria-label="검수 상태" value={scenario} onChange={e=>{setScenario(e.target.value);window.dispatchEvent(new CustomEvent('jarvis-mock-scenario',{detail:e.target.value}))}}><option value="normal">기본</option><option value="loading">느린 응답</option><option value="empty">빈 목록</option><option value="error">조회 오류</option><option value="readonly">조회 전용</option><option value="conflict">승인 충돌</option></select></label>}</footer></div>}
+import { LiveConsole } from "./LiveConsole";
+import { useState } from "react";
+import {
+  Routes,
+  Route,
+  NavLink,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { MailRoom } from "./MailRoom";
+import { Topology } from "./Topology";
+import { DecisionRoom } from "./DecisionRoom";
+export function ConsoleApp() {
+  const location = useLocation();
+  const [scenario, setScenario] = useState("normal"),
+    mock = import.meta.env.VITE_ENABLE_MOCKS === "true";
+  if (!mock) return <LiveConsole />;
+  return (
+    <div className="console-v2">
+      <header className="console-header">
+        <div className="console-brand">
+          <span className="brand-symbol">J</span>
+          <strong>자비스</strong>
+          <span>에이전트 관제</span>
+        </div>
+        <nav aria-label="주요 작업">
+          <NavLink to="/work/mail-014">메일 작업실</NavLink>
+          <NavLink to="/topology">에이전트 감독</NavLink>
+          <NavLink
+            className={
+              location.pathname.startsWith("/decisions/") ? "active" : ""
+            }
+            to="/decisions/r0.8.2"
+          >
+            버전 판정
+          </NavLink>
+        </nav>
+        <div className="environment-tag">
+          {mock ? "목업 / 예시 데이터" : "로컬 운영"}
+        </div>
+      </header>
+      <main className="console-body" key={scenario}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/work/mail-014" replace />} />
+          <Route
+            path="/work"
+            element={<Navigate to="/work/mail-014" replace />}
+          />
+          <Route path="/work/:id" element={<MailRoom />} />
+          <Route path="/topology" element={<Topology />} />
+          <Route path="/decisions/:id" element={<DecisionRoom />} />
+          <Route path="*" element={<Navigate to="/work/mail-014" replace />} />
+        </Routes>
+      </main>
+      <footer className="console-footer">
+        <span>
+          {mock
+            ? "실제 메일·에이전트에 연결되지 않은 검수용 목업입니다."
+            : "관제의 승인과 외부 작업 권한은 서버에서 다시 검사합니다."}
+        </span>
+        {mock && (
+          <label>
+            검수 상태
+            <select
+              aria-label="검수 상태"
+              value={scenario}
+              onChange={(e) => {
+                setScenario(e.target.value);
+                window.dispatchEvent(
+                  new CustomEvent("jarvis-mock-scenario", {
+                    detail: e.target.value,
+                  }),
+                );
+              }}
+            >
+              <option value="normal">기본</option>
+              <option value="loading">느린 응답</option>
+              <option value="empty">빈 목록</option>
+              <option value="error">조회 오류</option>
+              <option value="readonly">조회 전용</option>
+              <option value="conflict">승인 충돌</option>
+            </select>
+          </label>
+        )}
+      </footer>
+    </div>
+  );
+}

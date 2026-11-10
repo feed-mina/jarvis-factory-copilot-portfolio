@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: 화면 (React · Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:mock
+      - run: npm run test:bridge
+      - run: npm run test:web-login-config
+
+  sample:
+    name: 공장 샘플 (node:test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: samples/factory-copilot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # 샘플 검사는 외부 패키지 없이 Node 기본 기능만 쓴다.
+      - run: node --test tests/*.test.mjs
+
+  server:
+    name: 서버 (FastAPI · LangGraph · PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: jarvis
+          POSTGRES_PASSWORD: jarvis
+          POSTGRES_DB: jarvis_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jarvis -d jarvis_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # 검사 전용 값. 실제 운영 비밀값이 아니다.
+      JARVIS_DATABASE_URL: postgresql://jarvis:jarvis@127.0.0.1:5432/jarvis_test
+      JARVIS_OPERATOR_TOKEN: ci-only-operator-token-0123456789abcdef
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - run: uvx ruff format --check .
+      - run: uv run pytest -q
+
+  backend:
+    name: 로컬 연결 설정 (backend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # test_dpapi_roundtrip 은 Windows 전용 암호 저장 기능을 쓰므로 리눅스에서는 건너뛴다.
+      - run: uv run --with pytest pytest -q --deselect test_setup.py::test_dpapi_roundtrip
