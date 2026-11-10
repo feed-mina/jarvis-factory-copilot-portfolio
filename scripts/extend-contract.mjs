@@ -1,2 +1,135 @@
-import fs from 'node:fs/promises';import {createServer} from 'vite';
-const server=await createServer({server:{middlewareMode:true},appType:'custom'});try{const {taskSnapshot}=await server.ssrLoadModule('/src/mocks/workspace.ts');const doc=JSON.parse(await fs.readFile('contracts/openapi.yaml','utf8'));function infer(v){if(v===null)return {type:['string','null']};if(Array.isArray(v))return {type:'array',items:v.length?infer(v[0]):{type:'object'}};if(typeof v==='object')return {type:'object',required:Object.keys(v),properties:Object.fromEntries(Object.entries(v).map(([k,v])=>[k,infer(v)]))};return {type:typeof v==='number'?'number':typeof v};}const snap=infer(taskSnapshot(7));snap.properties.status.enum=['idle','running','completed','blocked','waiting'];snap.properties.nodes.items.properties.state.enum=snap.properties.status.enum;snap.properties.nodes.items.properties.kind.enum=['gateway','supervisor','agent','memory'];snap.properties.nodes.items.properties.taskId={type:['string','null']};snap.properties.nodes.items.properties.memory.items=infer(taskSnapshot(7).nodes.find(n=>n.id==='memory').memory[0]);snap.properties.nodes.items.properties.memory.items.properties.scope.enum=['task','policy','checkpoint'];snap.properties.edges.items.properties.kind.enum=['delegate','handoff','memory','evaluate'];snap.properties.stages.items.properties.state.enum=snap.properties.status.enum;snap.properties.eval.properties.faithfulness={type:['number','null']};doc.components.schemas.TaskSnapshot=snap;doc.components.schemas.TaskSummary=infer({id:'',title:'',sender:'',status:'',releaseId:''});const res=schema=>({'200':{description:'Success',content:{'application/json':{schema}}},'404':{description:'Task not found'},'422':{description:'Invalid event sequence'},'503':{description:'Retry available'}});const param={name:'taskId',in:'path',required:true,schema:{type:'string'}};doc.paths['/api/v1/tasks']={get:{operationId:'listTasks',responses:res({type:'array',items:{$ref:'#/components/schemas/TaskSummary'}})}};doc.paths['/api/v1/tasks/{taskId}']={get:{operationId:'getTaskSnapshot',parameters:[param,{name:'at',in:'query',schema:{type:'integer',minimum:0}}],responses:res({$ref:'#/components/schemas/TaskSnapshot'})}};doc.paths['/api/v1/tasks/{taskId}/events']={get:{operationId:'streamTaskEvents',description:'SSE snapshot (TaskSnapshot), replay_end, stream_error. id=event-N. Monotonic seq. Reconnect after last received sequence; production retention gaps require snapshot refresh.',parameters:[param,{name:'after',in:'query',schema:{type:'integer',minimum:-1}},{name:'Last-Event-ID',in:'header',schema:{type:'string'}}],responses:{'200':{description:'Server sent events',content:{'text/event-stream':{schema:{type:'string'}}}},'404':{description:'Task missing'},'422':{description:'Invalid resume cursor'}}}};doc.info.version='0.2.0';doc.info.description='목업/실제 API 공유 계약. 작업 스냅샷과 SSE 포함. 운영 이벤트 보존·페이지네이션은 백엔드 단계에서 확장.';await fs.writeFile('contracts/openapi.yaml',JSON.stringify(doc,null,2));}finally{await server.close()}
+import fs from "node:fs/promises";
+import { createServer } from "vite";
+const server = await createServer({
+  server: { middlewareMode: true },
+  appType: "custom",
+});
+try {
+  const { taskSnapshot } = await server.ssrLoadModule(
+    "/src/mocks/workspace.ts",
+  );
+  const doc = JSON.parse(await fs.readFile("contracts/openapi.yaml", "utf8"));
+  function infer(v) {
+    if (v === null) return { type: ["string", "null"] };
+    if (Array.isArray(v))
+      return {
+        type: "array",
+        items: v.length ? infer(v[0]) : { type: "object" },
+      };
+    if (typeof v === "object")
+      return {
+        type: "object",
+        required: Object.keys(v),
+        properties: Object.fromEntries(
+          Object.entries(v).map(([k, v]) => [k, infer(v)]),
+        ),
+      };
+    return { type: typeof v === "number" ? "number" : typeof v };
+  }
+  const snap = infer(taskSnapshot(7));
+  snap.properties.status.enum = [
+    "idle",
+    "running",
+    "completed",
+    "blocked",
+    "waiting",
+  ];
+  snap.properties.nodes.items.properties.state.enum =
+    snap.properties.status.enum;
+  snap.properties.nodes.items.properties.kind.enum = [
+    "gateway",
+    "supervisor",
+    "agent",
+    "memory",
+  ];
+  snap.properties.nodes.items.properties.taskId = { type: ["string", "null"] };
+  snap.properties.nodes.items.properties.memory.items = infer(
+    taskSnapshot(7).nodes.find((n) => n.id === "memory").memory[0],
+  );
+  snap.properties.nodes.items.properties.memory.items.properties.scope.enum = [
+    "task",
+    "policy",
+    "checkpoint",
+  ];
+  snap.properties.edges.items.properties.kind.enum = [
+    "delegate",
+    "handoff",
+    "memory",
+    "evaluate",
+  ];
+  snap.properties.stages.items.properties.state.enum =
+    snap.properties.status.enum;
+  snap.properties.eval.properties.faithfulness = { type: ["number", "null"] };
+  doc.components.schemas.TaskSnapshot = snap;
+  doc.components.schemas.TaskSummary = infer({
+    id: "",
+    title: "",
+    sender: "",
+    status: "",
+    releaseId: "",
+  });
+  const res = (schema) => ({
+    200: {
+      description: "Success",
+      content: { "application/json": { schema } },
+    },
+    404: { description: "Task not found" },
+    422: { description: "Invalid event sequence" },
+    503: { description: "Retry available" },
+  });
+  const param = {
+    name: "taskId",
+    in: "path",
+    required: true,
+    schema: { type: "string" },
+  };
+  doc.paths["/api/v1/tasks"] = {
+    get: {
+      operationId: "listTasks",
+      responses: res({
+        type: "array",
+        items: { $ref: "#/components/schemas/TaskSummary" },
+      }),
+    },
+  };
+  doc.paths["/api/v1/tasks/{taskId}"] = {
+    get: {
+      operationId: "getTaskSnapshot",
+      parameters: [
+        param,
+        { name: "at", in: "query", schema: { type: "integer", minimum: 0 } },
+      ],
+      responses: res({ $ref: "#/components/schemas/TaskSnapshot" }),
+    },
+  };
+  doc.paths["/api/v1/tasks/{taskId}/events"] = {
+    get: {
+      operationId: "streamTaskEvents",
+      description:
+        "SSE snapshot (TaskSnapshot), replay_end, stream_error. id=event-N. Monotonic seq. Reconnect after last received sequence; production retention gaps require snapshot refresh.",
+      parameters: [
+        param,
+        {
+          name: "after",
+          in: "query",
+          schema: { type: "integer", minimum: -1 },
+        },
+        { name: "Last-Event-ID", in: "header", schema: { type: "string" } },
+      ],
+      responses: {
+        200: {
+          description: "Server sent events",
+          content: { "text/event-stream": { schema: { type: "string" } } },
+        },
+        404: { description: "Task missing" },
+        422: { description: "Invalid resume cursor" },
+      },
+    },
+  };
+  doc.info.version = "0.2.0";
+  doc.info.description =
+    "목업/실제 API 공유 계약. 작업 스냅샷과 SSE 포함. 운영 이벤트 보존·페이지네이션은 백엔드 단계에서 확장.";
+  await fs.writeFile("contracts/openapi.yaml", JSON.stringify(doc, null, 2));
+} finally {
+  await server.close();
+}

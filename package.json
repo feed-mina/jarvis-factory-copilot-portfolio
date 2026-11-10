@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "generate:api": "openapi-typescript contracts/openapi.yaml -o src/api/schema.d.ts",
-    "test": "vitest run",
+    "test": "vitest run --dir src",
     "build:mock": "tsc -b && vite build --mode mock",
     "build:live": "tsc -b && vite build --mode live --outDir dist-live",
     "start:live": "node scripts/start-live.mjs",

@@ -14,3 +14,8 @@ dev = ["pytest>=8,<10"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 
+
+[tool.ruff]
+# 아래 파일은 버전 판정(release gate)이 "코드 글자 그대로"를 읽어 후보 버전을 만들고 지문을 뜬다.
+# 줄 정리만 해도 판정 근거가 달라지므로 자동 정리 대상에서 뺀다.
+extend-exclude = ["pipeline.py", "role_runner.py", "release_child.py", "release_gate.py", "release_runtime.py"]
