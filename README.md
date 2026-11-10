@@ -13,7 +13,7 @@
 - **AI 설정을 바꿀 때도 사람이 판정합니다.** 지금 쓰는 버전과 새 후보 버전을 가상 사례 30건 × 3회로 비교한 뒤, 사람이 검토해서 바꿀지 정합니다("버전 판정").
 - **같은 구조를 공장 데이터로 옮긴 작은 샘플이 있습니다.** [`samples/factory-copilot/`](samples/factory-copilot/README.md) — 이상 감지 → 원인 추적 → 조치 제안 → 사람 승인 → 모의 명령. 가짜 센서 기록 30건으로 돌고, AI 모델·DB 없이 실행됩니다.
 
-<!-- MERGE-CHECK: 체험 링크 -->
+> 공장 샘플을 누르면 바로 체험되는 공개 주소는 **아직 열려 있지 않습니다.** 공개 준비는 끝났고, 여는 순서는 [샘플 안내의 "공개하기"](samples/factory-copilot/README.md)에 있습니다.
 
 ## 화면
 
@@ -36,7 +36,36 @@
 
 ## 에이전트 흐름
 
-<!-- MERGE-CHECK: 에이전트 흐름 설명은 합칠 때 채움 -->
+메일 한 건이 지나가는 길 전체를 LangGraph 그래프 하나로 그렸고, AI 모델을 부르는 부분은 LangChain 체인으로 묶었습니다.
+
+```mermaid
+flowchart TD
+    S([시작]) --> analyze["analyze<br/>분류·요약·초안 작성"]
+    analyze -->|답장 필요| critic_review["critic_review<br/>Critic 검수 대기"]
+    analyze -->|답장 불필요| no_reply_needed["no_reply_needed"]
+    no_reply_needed --> E([끝])
+    critic_review -->|검수 통과| human_approval["human_approval<br/>사람 승인 대기"]
+    critic_review -->|차단·실패·아직 안 함| critic_review
+    human_approval -->|승인 기록됨| save_draft["save_draft<br/>Gmail 초안 저장 대기"]
+    human_approval -->|승인 거절·아직 안 함| human_approval
+    human_approval -->|초안 수정됨| critic_review
+    save_draft -->|저장 확인| E
+    save_draft -->|결과 불확실| reconcile_save["reconcile_save<br/>Gmail 조회로만 확인"]
+    save_draft -->|저장 거절·아직 안 함| save_draft
+    save_draft -->|초안 수정됨| critic_review
+    reconcile_save -->|초안 찾음| E
+    reconcile_save -->|아직 못 찾음| reconcile_save
+```
+
+- 순서는 분석 → Critic 검수 → 사람 승인 → Gmail 초안 저장입니다.
+- 답장이 필요 없는 알림·광고는 분석 직후 끝나며, 승인·저장으로 가는 길이 없습니다.
+- 검수·승인·저장 칸에서는 그래프가 멈춰서 사람이 누를 때까지 기다립니다. 멈춘 위치는 PostgreSQL에 저장되어 서버를 껐다 켜도 이어집니다.
+- 저장 칸으로 들어가는 길은 "사람 승인" 하나뿐이고, 승인 기록이 없으면 저장되지 않습니다.
+- 저장 결과가 불확실하면 다시 쓰지 않고 Gmail을 조회만 해서 확인합니다.
+- AI 모델 호출은 LangChain 체인(프롬프트 → 모델 → 답 형식 검사)을 거칩니다. 형식이 틀린 답은 받아들이지 않고 실패로 처리합니다.
+- 검증 범위: 가짜 모델·가짜 Gmail과 테스트용 PostgreSQL로만 확인했습니다. 실제 Hermes·Gmail·LangSmith에는 연결해 보지 않았습니다. 버전 판정용 평가는 격리된 별도 실행 경로를 쓰므로 이 체인을 거치지 않습니다.
+
+자세한 설명: [server/README-ko.md](server/README-ko.md)의 "LangGraph 흐름과 LangChain 연결".
 
 ## 빠르게 실행해 보기
 
@@ -69,6 +98,7 @@ cd public && python3 -m http.server 8799 --bind 127.0.0.1   # http://127.0.0.1:8
 | 서버 | Python, FastAPI, Uvicorn |
 | 저장소 | PostgreSQL (psycopg) |
 | 흐름 관리 | LangGraph (+ PostgreSQL 체크포인트) |
+| 모델 호출 | LangChain(langchain-core) 체인 → Hermes 실행기 |
 | 관찰 | LangSmith |
 
 ## 검사 현황
@@ -80,7 +110,7 @@ cd public && python3 -m http.server 8799 --bind 127.0.0.1   # http://127.0.0.1:8
 | 화면 | `npm test` | 24개 통과 |
 | 화면 빌드 | `npm run build:mock` | 성공 |
 | 공장 샘플 | `node --test tests/*.test.mjs` | 30개 통과 |
-| 서버 | `pytest` (테스트용 PostgreSQL + `JARVIS_DATABASE_URL`, `JARVIS_OPERATOR_TOKEN` 필요) | 62개 통과 |
+| 서버 | `pytest` (테스트용 PostgreSQL + `JARVIS_DATABASE_URL`, `JARVIS_OPERATOR_TOKEN` 필요) | 97개 통과 |
 | 연결 스크립트 | `npm run test:bridge` / `npm run test:web-login-config` | 5개 / 3개 통과 |
 
 확인하지 **않은** 것:

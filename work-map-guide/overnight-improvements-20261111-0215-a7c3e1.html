@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>밤샘 개선 6건 완료 보고</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1c2430;--mute:#5d6875;--line:#dcd9d0;--ok:#1f7a4d;--warn:#9a6200}
+@media (prefers-color-scheme:dark){:root{--bg:#14181d;--card:#1c222a;--ink:#e8ecf1;--mute:#9aa6b3;--line:#2e3742;--ok:#5fd39a;--warn:#f0b955}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,"Noto Sans KR",sans-serif}
+main{max-width:820px;margin:0 auto;padding:24px 16px 56px}
+h1{font-size:1.5rem;margin:0 0 4px}h2{font-size:1.1rem;margin:28px 0 8px}
+.meta{color:var(--mute);font-size:.9rem}
+section,table{background:var(--card);border:1px solid var(--line);border-radius:10px}
+section{padding:14px 16px;margin:10px 0}
+table{width:100%;border-collapse:collapse;overflow:hidden}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.95rem}
+tr:last-child td{border-bottom:0}
+.ok{color:var(--ok);font-weight:600}.warn{color:var(--warn);font-weight:600}
+code{font-size:.88em;word-break:break-all}li{margin:4px 0}
+.wrap{overflow-x:auto}
+</style>
+</head>
+<body><main>
+<h1>밤샘 개선 6건 완료 보고</h1>
+<p class="meta">기록 시각 2026-11-11 새벽(KST) · 가지 <code>claude/overnight-improvements</code> · 검토 요청 #1 · <strong>사용자 검토 대기 — main에는 넣지 않았습니다.</strong></p>
+<section><strong>알림.</strong> AGENTS.md가 지정한 work-map-guide 스킬은 이 작업 환경에 없었습니다. 그 스킬을 썼다고 하지 않고, 같은 폴더에 독립 HTML 기록만 남깁니다. 포트폴리오 사본에서 뺐던 기존 보고서 45개는 그대로 없습니다.</section>
+
+<h2>무엇이 바뀌었나</h2>
+<div class="wrap"><table>
+<tr><th>번호</th><th>한 일</th><th>근거 파일</th></tr>
+<tr><td>1</td><td>첫 화면 소개글을 처음 보는 사람용으로 다시 쓰고 실제 화면 사진 5장을 넣음. 예전 소개글은 그대로 옮겨 보관.</td><td><code>README.md</code>, <code>docs/images/</code>, <code>docs/MOCKUP-NOTES.md</code></td></tr>
+<tr><td>2</td><td>공장 샘플이 하위 주소에서 빈 화면으로 뜨던 문제를 고치고, 공개용 자동 실행 설정 2개와 여는 순서를 추가. <span class="warn">실제 공개는 아직 안 됨.</span></td><td><code>samples/factory-copilot/public/index.html</code>, <code>.github/workflows/pages.yml</code>, <code>deploy-sample-worker.yml</code></td></tr>
+<tr><td>3</td><td>메일 한 건의 길 전체(분석 → 검수 → 사람 승인 → 저장 → 저장 확인)를 그래프 하나로 확장. 저장으로 가는 길은 사람 승인 하나뿐.</td><td><code>server/workflow.py</code>, <code>server/test_graph.py</code></td></tr>
+<tr><td>4</td><td>AI 모델 호출을 LangChain 체인(프롬프트 → 모델 → 답 형식 검사)으로 연결. 끄는 스위치 <code>JARVIS_LANGCHAIN_ROLES=0</code> 포함.</td><td><code>server/chains.py</code>, <code>server/test_chains.py</code></td></tr>
+<tr><td>5</td><td>올릴 때마다 화면·샘플·서버·backend 검사를 자동 실행.</td><td><code>.github/workflows/ci.yml</code></td></tr>
+<tr><td>6</td><td>자동 줄 정리. 400자 넘는 줄 38개 → 2개(남은 2개는 화면 틀을 담은 글자 덩어리). <code>npm test</code>가 샘플 검사 파일까지 집어 실패하던 것도 수정.</td><td><code>src/</code>, <code>server/</code>, <code>backend/</code>, <code>package.json</code></td></tr>
+</table></div>
+
+<h2>확인한 것</h2>
+<div class="wrap"><table>
+<tr><th>검사</th><th>결과</th></tr>
+<tr><td>화면 <code>npm test</code> / <code>npm run build:mock</code></td><td class="ok">24개 통과 / 빌드 성공</td></tr>
+<tr><td>연결 검사 <code>test:bridge</code>, <code>test:web-login-config</code></td><td class="ok">5개, 3개 통과</td></tr>
+<tr><td>공장 샘플 <code>node --test</code></td><td class="ok">30개 통과</td></tr>
+<tr><td>서버 <code>pytest</code> (테스트용 PostgreSQL)</td><td class="ok">97개 통과 (기존 62 + 신규 35)</td></tr>
+<tr><td>backend <code>pytest</code></td><td class="ok">5개 통과, Windows 전용 1개는 리눅스에서 제외</td></tr>
+<tr><td>깃허브 자동 검사</td><td>검토 요청 #1의 검사 표시를 보세요(이 기록 작성 시점 이후 결과는 거기에 남습니다).</td></tr>
+<tr><td>샘플 하위 주소 동작</td><td class="ok">브라우저로 승인 → 모의 명령까지 눌러 확인, 실패한 요청 0건</td></tr>
+</table></div>
+
+<h2>확인하지 못한 것</h2>
+<section><ul>
+<li>실제 Hermes·Gmail·LangSmith 연결. 그래프와 체인은 가짜 모델·가짜 Gmail로만 검사했습니다.</li>
+<li>샘플의 실제 공개 주소. 공개용 자동 실행 설정은 깃허브에서 한 번도 돌지 않았습니다.</li>
+<li>버전 판정용 평가(<code>release_child.py</code>, <code>evaluations.py</code>)는 격리된 별도 경로라 새 체인을 거치지 않습니다.</li>
+<li>검수·승인·저장 때마다 그래프 위치 기록이 늘어납니다. 속도와 연결 수 영향은 재지 않았습니다.</li>
+</ul></section>
+
+<h2>손대지 않은 것</h2>
+<section>버전 판정 장치가 코드 글자 그대로를 읽는 파일 5개(<code>pipeline.py</code>, <code>role_runner.py</code>, <code>release_child.py</code>, <code>release_gate.py</code>, <code>release_runtime.py</code>)는 줄 정리에서도, 흐름 확장에서도 바꾸지 않았습니다.</section>
+
+<h2>사용자가 할 일</h2>
+<section><ol>
+<li>검토 요청 #1을 읽고 받을지 정하기. 3·4번은 비공개 원본에 옮기기 전에 실제 연결로 한 번 돌려 보기.</li>
+<li>샘플 공개: 저장소 Settings → Pages → Source를 "GitHub Actions"로 → Actions에서 pages 실행 → 주소 열어 확인.</li>
+<li>공개 주소가 열리면 첫 화면 소개글의 "아직 열려 있지 않습니다" 문장을 실제 주소로 바꾸기.</li>
+</ol></section>
+</main></body></html>
