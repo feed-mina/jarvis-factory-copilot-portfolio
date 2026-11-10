@@ -1,0 +1,44 @@
+# (선택) Factory AI Copilot 샘플을 Cloudflare Workers 에 올린다 — 화면 + 읽기 전용 /api/*.
+# 손으로만 실행한다(workflow_dispatch). 필요한 저장소 시크릿 2개:
+#   CLOUDFLARE_API_TOKEN  — Cloudflare 대시보드 → My Profile → API Tokens → "Edit Cloudflare Workers" 템플릿
+#   CLOUDFLARE_ACCOUNT_ID — Cloudflare 대시보드 → Workers & Pages 오른쪽의 Account ID
+# 넣는 곳: GitHub 저장소 Settings → Secrets and variables → Actions → New repository secret
+name: deploy-sample-worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-sample-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: samples/factory-copilot
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: 시크릿 확인
+        run: |
+          missing=""
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::저장소 시크릿이 없습니다:$missing — Settings → Secrets and variables → Actions 에서 추가한 뒤 다시 실행하세요."
+            exit 1
+          fi
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 샘플 테스트
+        run: node --test tests/*.test.mjs
+      - name: 배포 (wrangler deploy)
+        run: npx --yes wrangler@4 deploy
