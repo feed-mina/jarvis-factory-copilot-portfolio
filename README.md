@@ -1,29 +1,101 @@
-> **포트폴리오용 사본 · 회사 데이터 없음 · 원본은 비공개.** 2026-10-06 `mina-Hermes-javis` main `2be2605` 스냅샷(이력 없음).
-> 운영 주소·계정 이메일은 `example.com` 자리표시자로 바꿨고, 생성 보고서 폴더(`work-map-guide/`, 45개)는 뺐다. 코드는 바꾸지 않았다.
-> 제조 현장 데이터용 에이전틱 샘플은 [`samples/factory-copilot/`](samples/factory-copilot/README.md) — 이 저장소의 승인 구조(`server/workflow.py` approve)를 공정 판단 → 원인 추적 → 사람 승인 → 모의 명령으로 옮긴 것.
+# 자비스 관제
 
-# 자비스 관제 목업 v2
+들어온 메일에 AI가 답장 초안을 쓰고, **사람이 승인한 것만** 메일함 임시보관함에 저장되도록 지켜보는 관제 화면입니다.
 
-메일 작업실 / 에이전트 감독 / 버전 판정 **화면 목업**(`VITE_ENABLE_MOCKS=true`)과, Gmail 수집 → Hermes 분류·초안 → Critic 검수 → 사람 승인 → Gmail 초안 저장까지 구현된 **운영 서버**(`server/`, FastAPI + PostgreSQL + LangGraph)를 함께 담은 저장소. 운영 상태는 `server/README-ko.md`·`OPERATIONS.md`·`LLMOPS-IMPLEMENTATION.md`에 있다.
+> 포트폴리오용 사본입니다. 회사 데이터는 없고, 원본 저장소는 비공개이며, 주소·이메일은 `example.com`으로 바꿨습니다.
 
-## 실행
-Node 22+ 환경에서 `npm ci`, `npm run dev`. `.env.development`가 MSW를 켠다. 목업 빌드는 `npm run build:mock`; 실제 연결용 `npm run build`는 mock 비활성. 실제 운영 백엔드는 `server/`에 있다(2026-09-13 실제 Gmail 초안 1건 DRAFT 검증, 발송 기능 없음). `backend/`는 로컬 연결 설정용이다.
+![CI](https://github.com/feed-mina/jarvis-factory-copilot-portfolio/actions/workflows/ci.yml/badge.svg)
 
-## 재사용 구조
-- src/v2: 실제 재사용할 화면. fixtures 직접 import 없음.
-- src/api: OpenAPI 생성 타입, REST 클라이언트.
-- src/mocks: API와 SSE 예시 응답. 실제 메일 저장/배포 없음.
-- contracts/openapi.yaml: 작업 스냅샷·스트림·기존 평가/승인 계약.
-- package-lock.json: 프론트엔드 의존성 고정. @xyflow/react 12.11.6 사용.
-- STACK.md: 기술 선택과 운영 연결 경계.
-- DESIGN-CONTRACT.md: Depth 2, 시나리오, 필수 상태, 검증 한계.
+## 무엇을 하나요
 
-## 검수
-`npm test`, `npm run build:mock`. 현재 타입/빌드 통과, 테스트 11개 통과.
-브라우저 접근 정책으로 브라우저 상호작용·실제 스크린샷 검증은 미완료다. 테스트 통과를 브라우저 검수 통과로 간주하지 않는다.
+- **AI가 초안을 쓰지만, 사람이 승인해야만 저장됩니다.** 자동 발송 기능은 아예 없습니다. 승인된 초안도 Gmail에 "임시보관(DRAFT)"으로만 들어갑니다.
+- **AI 둘이 나눠서 일합니다.** 한 AI(Hermes)가 메일을 분류하고 답장 초안을 쓰면, 다른 AI 역할(Critic)이 그 초안을 검수합니다. 그 다음이 사람 차례입니다.
+- **AI 설정을 바꿀 때도 사람이 판정합니다.** 지금 쓰는 버전과 새 후보 버전을 가상 사례 30건 × 3회로 비교한 뒤, 사람이 검토해서 바꿀지 정합니다("버전 판정").
+- **같은 구조를 공장 데이터로 옮긴 작은 샘플이 있습니다.** [`samples/factory-copilot/`](samples/factory-copilot/README.md) — 이상 감지 → 원인 추적 → 조치 제안 → 사람 승인 → 모의 명령. 가짜 센서 기록 30건으로 돌고, AI 모델·DB 없이 실행됩니다.
 
-`jarvis-review.html`은 동일 React 소스의 정적 검수본이다. 화면 선택과 상세 문서 열기를 지원하며 버튼의 실제 동작은 비활성이다.
-`jarvis-mockup-v2-review.pdf`는 비브라우저 정적 렌더링이다. 실제 스크린샷이 아니며 폼과 SVG 라벨 등 표현 차이가 있다.
-재생성: `npm run build:mock`, `node scripts/export-review.mjs`, WeasyPrint+pypdf를 설치한 Python에서 `python scripts/render-pdf.py`.
+<!-- MERGE-CHECK: 체험 링크 -->
 
-운영 연결 전 남은 작업: FastAPI/worker/LangGraph/LangSmith/Gmail/Hermes, 지속 이벤트 원장, 서버 권한 사전 조회, 실측 프로세스 메모리, 이벤트 보존 갭 복구, 실제 브라우저·통합 검수. 화면 계약을 유지하며 백엔드를 연결하는 것이 인수 기준이다.
+## 화면
+
+아래는 모두 실제로 띄운 화면을 캡처한 것입니다. 관제 화면 3장은 예시 데이터(목업 모드)로 띄웠습니다.
+
+![메일 작업실](docs/images/console-mail-room.png)
+*메일 작업실 — 메일 한 건이 수신부터 사람 검수까지 어디에 와 있는지, 오른쪽에 AI가 쓴 답장 초안과 "검토한 초안 저장" 버튼.*
+
+![에이전트 감독](docs/images/console-agent-topology.png)
+*에이전트 감독 — 어떤 AI 역할이 일을 맡아 누구에게 넘겼고, 무엇을 기억하는지 그래프로 표시.*
+
+![버전 판정](docs/images/console-version-decision.png)
+*버전 판정 — 후보 버전의 평가 점수·운영 관찰·진단을 한 화면에 놓고 사람이 배포 여부를 결정(숫자는 예시).*
+
+![공장 샘플 — 승인 대기](docs/images/factory-sample-approval-pending.png)
+*공장 샘플 — "라인 정지" 제안이 근거와 함께 승인 대기 중. 승인·거절·근거 더 요청 중 하나를 사람이 고릅니다.*
+
+![공장 샘플 — 모의 명령](docs/images/factory-sample-simulated-command.png)
+*공장 샘플 — 승인한 뒤에야 모의 명령 1건이 만들어진 상태. 실제 기계로는 가지 않습니다.*
+
+## 에이전트 흐름
+
+<!-- MERGE-CHECK: 에이전트 흐름 설명은 합칠 때 채움 -->
+
+## 빠르게 실행해 보기
+
+Node 22 이상이 필요합니다.
+
+**관제 화면(예시 데이터)**
+
+```sh
+npm ci
+npm run dev        # 터미널에 나오는 http://127.0.0.1:... 주소를 엽니다
+```
+
+**공장 샘플**
+
+```sh
+cd samples/factory-copilot
+node --test tests/*.test.mjs                          # 테스트 30개
+cd public && python3 -m http.server 8799 --bind 127.0.0.1   # http://127.0.0.1:8799
+```
+
+화면에서 질문 하나를 고르고 "분석 실행" → "승인" → "모의 명령 생성" 순으로 눌러 볼 수 있습니다.
+
+서버(`server/`) 실행은 PostgreSQL과 환경 변수가 필요합니다. [server/README-ko.md](server/README-ko.md)를 보세요.
+
+## 기술 구성
+
+| 구분 | 사용한 것 |
+|---|---|
+| 화면 | React 19, Vite, TypeScript, TanStack Query, @xyflow/react(그래프), Tailwind CSS, MSW(예시 응답) |
+| 서버 | Python, FastAPI, Uvicorn |
+| 저장소 | PostgreSQL (psycopg) |
+| 흐름 관리 | LangGraph (+ PostgreSQL 체크포인트) |
+| 관찰 | LangSmith |
+
+## 검사 현황
+
+이 브랜치에서 직접 돌려 확인한 것:
+
+| 대상 | 명령 | 결과 |
+|---|---|---|
+| 화면 | `npm test` | 24개 통과 |
+| 화면 빌드 | `npm run build:mock` | 성공 |
+| 공장 샘플 | `node --test tests/*.test.mjs` | 30개 통과 |
+| 서버 | `pytest` (테스트용 PostgreSQL + `JARVIS_DATABASE_URL`, `JARVIS_OPERATOR_TOKEN` 필요) | 62개 통과 |
+| 연결 스크립트 | `npm run test:bridge` / `npm run test:web-login-config` | 5개 / 3개 통과 |
+
+확인하지 **않은** 것:
+
+- 실제 Gmail 수집·승인·초안 저장, 실제 Hermes 호출, LangSmith 전송. 저장소 문서에 과거 실제 검증 기록(2026-09-13 초안 1건)이 남아 있지만 이번에 다시 확인한 것은 아닙니다.
+- 브라우저에서 버튼을 눌러 보는 상호작용 검사. 위 스크린샷은 화면이 뜨는지만 확인한 것이고(공장 샘플만 승인 → 모의 명령까지 클릭), 자동화된 화면 검사는 없습니다.
+- 테스트 통과를 실제 운영 검증으로 보지 않습니다. 자세한 범위는 [handover/verification.md](handover/verification.md)에 있습니다.
+
+## 더 읽을 문서
+
+- [STACK.md](STACK.md) — 기술 선택 이유와 운영 연결 경계
+- [DESIGN-CONTRACT.md](DESIGN-CONTRACT.md) — 화면 설계 약속과 검증 한계
+- [OPERATIONS.md](OPERATIONS.md) — 운영 방법
+- [LLMOPS-IMPLEMENTATION.md](LLMOPS-IMPLEMENTATION.md) — 평가·관찰 구현
+- [server/README-ko.md](server/README-ko.md) — 서버 설명
+- [samples/factory-copilot/README.md](samples/factory-copilot/README.md) — 공장 샘플 설명
+- [handover/README.md](handover/README.md) — 인수인계 문서
+- [docs/MOCKUP-NOTES.md](docs/MOCKUP-NOTES.md) — 이전 README 원문(목업 기술 메모)
