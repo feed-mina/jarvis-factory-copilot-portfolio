@@ -39,7 +39,10 @@ export interface NodeRun {
   prompt_version?: string;
   input_tokens?: number | null;
   output_tokens?: number | null;
+  total_tokens?: number | null;
   cost_usd?: number | null;
+  cost_status?: string | null;
+  model_called?: boolean;
   at?: string;
   started_at?: string;
 }
@@ -291,3 +294,18 @@ export const workReportApi = {
       version,
     }),
 };
+
+// 토큰·비용은 서버가 모르면 null로 준다. null은 0이 아니라 '미측정'으로 보인다.
+export function usageText(d?: Partial<NodeRun>) {
+  if (!d) return "토큰: 미측정 · 비용: 미측정";
+  if (d.model_called === false) return "모델 호출 없음(보안 차단 분기)";
+  const tokens =
+    d.input_tokens == null || d.output_tokens == null
+      ? "토큰: 미측정"
+      : `토큰: 입력 ${d.input_tokens.toLocaleString()} · 출력 ${d.output_tokens.toLocaleString()}`;
+  const cost =
+    d.cost_usd == null
+      ? "비용: 미측정"
+      : `비용: $${d.cost_usd.toFixed(4)}${d.cost_status ? ` (${d.cost_status})` : ""}`;
+  return `${tokens} · ${cost}`;
+}

@@ -14,6 +14,7 @@ import {
   type Job,
   type JobEvent,
   type NodeRun,
+  usageText,
 } from "../api/live";
 import { Button } from "../components/ui/button";
 import "./operations.css";
@@ -179,7 +180,7 @@ export function RunGraph({ events, job }: { events: JobEvent[]; job?: Job }) {
               · {chosen.details.prompt_version}
             </p>
             <p>
-              토큰: 미측정 · 비용: 미측정
+              {usageText(chosen.details)}
               {chosen.details.error_type &&
                 ` · 오류: ${chosen.details.error_type}`}
             </p>
@@ -334,6 +335,8 @@ interface EvalRun {
       errors: number;
       mean_case_ms: number;
     };
+    token_count?: number | null;
+    cost_usd?: number | null;
     source: string;
   };
 }
@@ -430,7 +433,16 @@ export function EvalConsole() {
             </article>
             <article>
               <strong>{ms(run.payload.summary?.mean_case_ms)}</strong>
-              <span>평균 사례 지연 / 토큰·비용 미측정</span>
+              <span>
+                평균 사례 지연 / 토큰{" "}
+                {run.payload.token_count == null
+                  ? "미측정"
+                  : run.payload.token_count.toLocaleString()}{" "}
+                · 비용{" "}
+                {run.payload.cost_usd == null
+                  ? "미측정"
+                  : `$${run.payload.cost_usd.toFixed(4)}`}
+              </span>
             </article>
           </div>
           <p>
