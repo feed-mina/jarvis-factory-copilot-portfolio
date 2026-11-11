@@ -1,6 +1,19 @@
 """Fixed no-tools Hermes invocation, stdin data only."""
 import sys,json,os,contextlib
 envelope=json.load(sys.stdin)
+def read_usage(agent):
+    """Token/cost counters the Hermes agent keeps for this one call. Missing counters stay None, never 0."""
+    def n(name,kind=int):
+        v=getattr(agent,'session_'+name,None)
+        return kind(v) if isinstance(v,(int,float)) and not isinstance(v,bool) else None
+    status=getattr(agent,'session_cost_status',None)
+    # A finished model call always uses tokens, so 0/0 means the provider reported nothing: keep it unknown.
+    known=(n('input_tokens') or 0)+(n('output_tokens') or 0)>0
+    if not known:return {'input_tokens':None,'output_tokens':None,'total_tokens':None,'cache_read_tokens':None,'reasoning_tokens':None,'api_calls':n('api_calls'),'cost_usd':None,'cost_status':None,'source':None}
+    return {'input_tokens':n('input_tokens'),'output_tokens':n('output_tokens'),'total_tokens':n('total_tokens'),
+      'cache_read_tokens':n('cache_read_tokens'),'reasoning_tokens':n('reasoning_tokens'),'api_calls':n('api_calls'),
+      'cost_usd':n('estimated_cost_usd',float) if known and status not in (None,'','unknown') else None,
+      'cost_status':status if isinstance(status,str) and status else None,'source':'hermes-agent-session' if known else None}
 try:
     with open(os.devnull,'w') as sink,contextlib.redirect_stdout(sink),contextlib.redirect_stderr(sink):
         from dotenv import load_dotenv
@@ -15,6 +28,7 @@ try:
         text=str(result.get('final_response','')).strip()
         if text.startswith('```'):text=text.split('\n',1)[1].rsplit('```',1)[0].strip()
         parsed=json.loads(text)
-    print(json.dumps({'result':parsed,'model':m['default'],'provider':m['provider']},ensure_ascii=False))
+        usage=read_usage(a)
+    print(json.dumps({'result':parsed,'model':m['default'],'usage':usage,'provider':m['provider']},ensure_ascii=False))
 except Exception as e:
     print(json.dumps({'error':type(e).__name__}));sys.exit(1)

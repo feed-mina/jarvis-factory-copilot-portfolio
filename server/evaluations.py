@@ -2,7 +2,8 @@
 
 import hashlib, json, time, uuid
 from psycopg.types.json import Jsonb
-from pipeline import execute, VERSION, PROMPT_VERSION
+from pipeline import VERSION, PROMPT_VERSION
+from chains import execute
 from repository import Conflict, Missing
 
 DATASET_VERSION = "mail-synthetic-1.0"
@@ -52,6 +53,26 @@ CASES = [
 DATASET_HASH = hashlib.sha256(
     json.dumps(CASES, sort_keys=True, ensure_ascii=False).encode()
 ).hexdigest()
+
+
+def usage_totals(cases):
+    """사례별 토큰·비용 합계. 한 사례라도 모르면(오류 포함) None으로 두고 0으로 채우지 않는다."""
+    results = [x.get("result") or {} for x in cases]
+    if not results or any(x.get("status") == "error" for x in cases):
+        return None, None
+    tokens = [r.get("tokens") for r in results]
+    token_count = (
+        sum(t["total"] for t in tokens)
+        if all(isinstance(t, dict) and isinstance(t.get("total"), int) for t in tokens)
+        else None
+    )
+    costs = [r.get("cost_usd") for r in results]
+    cost = (
+        round(sum(costs), 6)
+        if all(isinstance(c, (int, float)) for c in costs)
+        else None
+    )
+    return token_count, cost
 
 
 class Evaluations:
@@ -201,6 +222,7 @@ class Evaluations:
                     sum(x["duration_ms"] for x in p["cases"]) / len(p["cases"]), 2
                 ),
             }
+            p["token_count"], p["cost_usd"] = usage_totals(p["cases"])
             self._update(id, p, "completed")
         except Exception as exc:
             p["error_type"] = type(exc).__name__

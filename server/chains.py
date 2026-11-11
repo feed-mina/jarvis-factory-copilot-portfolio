@@ -77,14 +77,33 @@ class HermesChatModel(BaseChatModel):
         # role_runner가 다시 {"untrusted_data": ...}로 감싸므로 여기서는 알맹이만 넘긴다.
         data = json.loads(human[0].content)["untrusted_data"]
         out = self.runner({"prompt": system[0].content, "data": data})
+        usage = out.get("usage")
         message = AIMessage(
             content=json.dumps(out["result"], ensure_ascii=False),
             response_metadata={
                 "model": out.get("model"),
                 "provider": out.get("provider"),
+                "usage": usage,
             },
+            # LangChain 표준 사용량 칸. 입력·출력 토큰을 모두 알 때만 채운다(모르면 0으로 채우지 않는다).
+            usage_metadata=langchain_usage(usage),
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+def langchain_usage(usage):
+    """role_runner의 사용량을 LangChain usage_metadata 모양으로 바꾼다. 하나라도 모르면 None."""
+    if not isinstance(usage, dict):
+        return None
+    i, o = usage.get("input_tokens"), usage.get("output_tokens")
+    if not isinstance(i, int) or not isinstance(o, int):
+        return None
+    total = usage.get("total_tokens")
+    return {
+        "input_tokens": i,
+        "output_tokens": o,
+        "total_tokens": total if isinstance(total, int) else i + o,
+    }
 
 
 def role_chain(role, model=None, prompts=None):
@@ -106,6 +125,7 @@ def role_chain(role, model=None, prompts=None):
             result=parser | RunnableLambda(lambda parsed: parsed.model_dump()),
             model=RunnableLambda(lambda m: m.response_metadata.get("model")),
             provider=RunnableLambda(lambda m: m.response_metadata.get("provider")),
+            usage=RunnableLambda(lambda m: m.response_metadata.get("usage")),
         )
     )
 
@@ -122,11 +142,76 @@ def enabled():
     return ENV.get("JARVIS_LANGCHAIN_ROLES", "1") != "0"
 
 
+USAGE_FIELDS = ("input_tokens", "output_tokens", "total_tokens")
+
+
+def node_usage(usage):
+    """노드 기록에 넣을 토큰·비용 칸. 모르는 값은 None 그대로 둔다."""
+    usage = usage if isinstance(usage, dict) else {}
+    return {
+        **{k: usage.get(k) for k in USAGE_FIELDS},
+        "cost_usd": usage.get("cost_usd"),
+        "cost_status": usage.get("cost_status"),
+    }
+
+
+def run_usage(node_runs):
+    """실행 전체 합계. 모델을 부른 노드 중 하나라도 사용량을 모르면 합계도 None(부분 합을 전체처럼 보이지 않게)."""
+    called = [
+        n
+        for n in node_runs
+        if n.get("node") in SCHEMAS and n.get("status") == "completed"
+    ]
+    called = [n for n in called if "model_called" not in n or n["model_called"]]
+    if not called:
+        return None, None
+    tokens = None
+    if all(
+        isinstance(n.get("input_tokens"), int)
+        and isinstance(n.get("output_tokens"), int)
+        for n in called
+    ):
+        i = sum(n["input_tokens"] for n in called)
+        o = sum(n["output_tokens"] for n in called)
+        tokens = {"input": i, "output": o, "total": i + o}
+    costs = [n.get("cost_usd") for n in called]
+    cost = (
+        round(sum(costs), 6)
+        if all(isinstance(c, (int, float)) for c in costs)
+        else None
+    )
+    return tokens, cost
+
+
 def execute(payload, emit=lambda action, details: None):
-    """분석 파이프라인(triage·security·draft·critic)을 LangChain 역할 체인으로 실행한다."""
-    if not enabled():
-        return pipeline.execute(payload, emit)
-    return pipeline.execute(payload, emit, role_fn=call_role)
+    """분석 파이프라인(triage·security·draft·critic)을 LangChain 역할 체인으로 실행한다.
+
+    pipeline.py는 버전 판정이 글자 그대로 읽는 파일이라 고치지 않고, 바깥에서 토큰 사용량을 붙인다.
+    - 역할 호출(role_fn)을 감싸 역할별 마지막 사용량을 잡아 두고,
+    - 같은 이름 노드의 완료 기록(emit)에 그 값을 채운다. pipeline은 같은 dict를 node_runs에도
+      넣으므로 결과의 node_runs에도 같이 반영된다.
+    triage와 security는 병렬로 돌지만 사용량을 역할 이름으로 나눠 두므로 섞이지 않는다.
+    """
+    base = call_role if enabled() else pipeline.call_role
+    pending = {}
+
+    def role_fn(role, data):
+        out = base(role, data)
+        pending[role] = out.get("usage") if isinstance(out, dict) else None
+        return out
+
+    def tracked_emit(action, details):
+        node = details.get("node") if isinstance(details, dict) else None
+        if action == "node_completed" and node in SCHEMAS:
+            called = node in pending
+            details.update(node_usage(pending.pop(node, None)))
+            # 보안 차단 분기에서는 모델을 부르지 않는다. 그 경우 '미측정'이 아니라 '호출 없음'이다.
+            details["model_called"] = called
+        return emit(action, details)
+
+    result = pipeline.execute(payload, tracked_emit, role_fn=role_fn)
+    tokens, cost = run_usage(result.get("node_runs") or [])
+    return {**result, "tokens": tokens, "cost_usd": cost}
 
 
 def review(payload):
